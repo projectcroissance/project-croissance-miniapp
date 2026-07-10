@@ -15,20 +15,25 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const tgUser = WebApp.initDataUnsafe.user;
-    if (!tgUser?.id) return;
-
+    const tgUser = WebApp.initDataUnsafe?.user;
+  
+    if (!tgUser?.id) {
+      console.log("Not running inside Telegram Mini App");
+      // For local testing, you can mock a user here if needed
+      return;
+    }
+  
     supabase
       .from('member_stats')
       .select('*')
       .eq('telegram_id', tgUser.id)
       .single()
-      .then(({ data }) => {
-        setMember(data);
+      .then(({ data, error }) => {
+        if (error) console.error(error);
+        else setMember(data);
         setLoading(false);
       });
   }, []);
-
   if (loading) return <div className="p-6 text-center">Loading profile...</div>;
 
   const tierEmoji: Record<string, string> = {
