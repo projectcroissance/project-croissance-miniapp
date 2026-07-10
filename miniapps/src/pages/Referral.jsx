@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import supabase from '../supabase';
 
-const BOT_USERNAME = process.env.REACT_APP_BOT_USERNAME || 'CroissanceGuildBot';
+const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || 'CroissanceGuildBot';
 
 // ─────────────────────────────────────────────
 // Referral Page — generate link, share, stats

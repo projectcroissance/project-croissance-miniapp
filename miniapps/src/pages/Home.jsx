@@ -166,7 +166,7 @@ export default function Home({ member }) {
               className="btn btn-ghost"
               style={{ width: 'auto', padding: '6px 14px', fontSize: 13 }}
               onClick={() => {
-                const link = `https://t.me/${process.env.REACT_APP_BOT_USERNAME}?start=ref_${member.referral_code}`;
+                const link = `https://t.me/${process.env.VITE_BOT_USERNAME}?start=ref_${member.referral_code}`;
                 navigator.clipboard.writeText(link);
               }}
             >
