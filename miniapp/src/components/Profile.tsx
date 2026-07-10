@@ -18,10 +18,10 @@ export default function Profile() {
     const tgUser = WebApp.initDataUnsafe?.user;
   
     if (!tgUser?.id) {
-      console.log("Not running inside Telegram Mini App");
-      // For local testing, you can mock a user here if needed
+      console.log("No Telegram user");
+      setLoading(false);
       return;
-    }
+  }
   
     supabase
       .from('member_stats')

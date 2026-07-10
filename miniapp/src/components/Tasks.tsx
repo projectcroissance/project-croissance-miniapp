@@ -26,8 +26,12 @@ export default function Tasks() {
   const handleFileUpload = async (file: File, taskId: string) => {
     if (!file) return;
 
-    const tgUser = WebApp.initDataUnsafe.user;
-    if (!tgUser?.id) return;
+    const tgUser = WebApp.initDataUnsafe?.user;
+
+    if (!tgUser?.id) {
+      alert("Telegram user not found");
+      return;
+    }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${tgUser.id}-${Date.now()}.${fileExt}`;

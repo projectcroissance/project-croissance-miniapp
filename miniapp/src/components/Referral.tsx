@@ -8,7 +8,12 @@ export default function Referral() {
   const [stats, setStats] = useState({ total: 0, active: 0 });
 
   useEffect(() => {
-    const tgUser = WebApp.initDataUnsafe.user;
+    const tgUser = WebApp.initDataUnsafe?.user;
+
+      if (!tgUser) {
+          console.log("No Telegram user found");
+          return;
+      }
     supabase.from('member_stats').select('referral_code,total_referrals,active_referrals')
       .eq('telegram_id', tgUser?.id).single().then(({ data }) => {
         if (data) {
