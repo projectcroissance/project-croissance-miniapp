@@ -1,7 +1,7 @@
 const { getOrCreateMember, awardPoints } = require('./members');
 const supabase = require('../supabase');
 
-const MINIAPP_URL = process.env.MINIAPP_URL || 'https://croissance.vercel.app';
+const MINIAPP_URL = process.env.MINIAPP_URL || 'https://project-croissance-miniapp-ki2i.vercel.app/';
 
 // ─────────────────────────────────────────────
 // Fired when a new member joins the community group

@@ -2,7 +2,7 @@ const { getOrCreateMember, processReferral, getMemberProfile, getLeaderboard } =
 const supabase = require('../supabase');
 
 const COMMUNITY_LINK = process.env.COMMUNITY_LINK || 'https://t.me/projectcroissancechat';
-const MINIAPP_URL    = process.env.MINIAPP_URL    || 'https://croissance.vercel.app';
+const MINIAPP_URL    = process.env.MINIAPP_URL    || 'https://project-croissance-miniapp-ki2i.vercel.app/';
 const BOT_USERNAME   = process.env.BOT_USERNAME   || 'Croissanceguildbot';
 
 // ─────────────────────────────────────────────
