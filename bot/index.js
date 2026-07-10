@@ -1,39 +1,11 @@
-console.log("1");
-
 require('dotenv').config({ path: '../.env' });
-
-console.log("2");
-
-const express = require('express');
-
-console.log("3");
-
+const express    = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 
-console.log("4");
-
-const {
-  handleStart,
-  handlePoints,
-  handleReferral,
-  handleTasks,
-  handleLeaderboard,
-  handleHelp
-} = require('./handlers/commands');
-
-console.log("5");
-
+const { handleStart, handlePoints, handleReferral, handleTasks, handleLeaderboard, handleHelp } = require('./handlers/commands');
 const { handleCallback } = require('./handlers/callbacks');
-
-console.log("6");
-
 const { handleNewMember } = require('./handlers/group');
-
-console.log("7");
-
-const { startCronJobs } = require('./cron');
-
-console.log("8");
+const { startCronJobs }   = require('./cron');
 
 // ─────────────────────────────────────────────
 // Validate environment

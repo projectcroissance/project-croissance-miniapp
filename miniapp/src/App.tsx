@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
-import BottomNav from './components/BottomNav';
-import Profile from './components/Profile';
-import Referral from './components/Referral';
-import Tasks from './components/Tasks';
-import Leaderboard from './components/Leaderboard';
+import BottomNav from './components/bottomnav';
+import Profile from './components/profile';
+import Referral from './components/referral';
+import Tasks from './components/tasks';
+import Leaderboard from './components/leaderboard';
 
 function App() {
   const [activeTab, setActiveTab] = useState<'profile' | 'referral' | 'tasks' | 'leaderboard'>('profile');
