@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import WebApp from "@twa-dev/sdk";
+import * as Twa from "@twa-dev/sdk";
+
+const WebApp = Twa.default;
 
 console.log("WebApp =", WebApp);
 console.log("Keys =", Object.keys(WebApp));
