@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import WebApp from '@twa-dev/sdk';
+import WebApp from "@twa-dev/sdk";
+
+console.log("WebApp:", WebApp);
+console.log("ready:", WebApp.ready);
 
 // ─────────────────────────────────────────────
 // useTelegram — exposes Telegram Web App data
