@@ -60,7 +60,7 @@ p  { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: auto;
   max-width: 480px;
   margin: 0 auto;
 }
