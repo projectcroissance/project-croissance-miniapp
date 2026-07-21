@@ -33,3 +33,4 @@ build/
 .env.local
 .env.production
 .env.development
+admin-api/.env

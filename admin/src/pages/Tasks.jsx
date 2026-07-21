@@ -1,4 +1,123 @@
 import React, { useState, useEffect } from 'react';
+import { tasks as api } from '../api';
+import { useToast } from '../hooks/useAdmin';
+
+const EMPTY = { title:'', description:'', task_type:'daily', points_reward:15, requires_proof:true, proof_note:'', expires_at:'', max_submissions:'' };
+
+export default function Tasks() {
+  const [taskList, setTaskList] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [modal,    setModal]    = useState(false);
+  const [form,     setForm]     = useState(EMPTY);
+  const [editing,  setEditing]  = useState(null);
+  const [saving,   setSaving]   = useState(false);
+  const { show, ToastEl }       = useToast();
+
+  useEffect(() => { fetchTasks(); }, []);
+
+  async function fetchTasks() {
+    setLoading(true);
+    const data = await api.list().catch(() => []);
+    setTaskList(data);
+    setLoading(false);
+  }
+
+  function openCreate() { setForm(EMPTY); setEditing(null); setModal(true); }
+  function openEdit(t)  { setForm({ title:t.title, description:t.description, task_type:t.task_type, points_reward:t.points_reward, requires_proof:t.requires_proof, proof_note:t.proof_note||'', expires_at:t.expires_at?t.expires_at.slice(0,16):'', max_submissions:t.max_submissions||'' }); setEditing(t.id); setModal(true); }
+
+  async function handleSave() {
+    if (!form.title.trim() || !form.description.trim()) { show('Title and description required','error'); return; }
+    setSaving(true);
+    try {
+      const payload = { ...form, points_reward: parseInt(form.points_reward)||15, expires_at: form.expires_at||null, max_submissions: form.max_submissions?parseInt(form.max_submissions):null, proof_note: form.proof_note.trim()||null };
+      editing ? await api.update(editing, payload) : await api.create(payload);
+      show(editing ? 'Task updated ✓' : 'Task created ✓');
+      setModal(false);
+      fetchTasks();
+    } catch (err) { show(err.message,'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function toggleActive(t) {
+    try { await api.toggle(t.id, !t.is_active); show(`Task ${t.is_active?'deactivated':'activated'} ✓`); fetchTasks(); }
+    catch (err) { show(err.message,'error'); }
+  }
+
+  async function deleteTask(t) {
+    if (!window.confirm(`Delete "${t.title}"?`)) return;
+    try { await api.delete(t.id); show('Task deleted'); fetchTasks(); }
+    catch (err) { show(err.message,'error'); }
+  }
+
+  const typeColor = { daily:'var(--teal)', timed:'var(--gold)', ongoing:'var(--purple)' };
+  const typeBg    = { daily:'var(--teal-pale)', timed:'var(--gold-pale)', ongoing:'var(--purple-pale)' };
+
+  return (
+    <div className="page-content">
+      {ToastEl}
+      <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:20 }}>
+        <button className="btn btn-primary" onClick={openCreate}>+ Create Task</button>
+      </div>
+      {loading ? <div className="loader"><div className="spinner" /></div> : taskList.length === 0 ? (
+        <div className="empty"><div className="empty-icon">📋</div><h3>No tasks yet</h3><p>Create your first task for members to complete.</p></div>
+      ) : (
+        <div className="card" style={{ padding:0 }}>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Task</th><th>Type</th><th>Points</th><th>Proof</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {taskList.map(t => (
+                  <tr key={t.id}>
+                    <td><div style={{ fontWeight:500, color:'var(--text-bright)', marginBottom:2 }}>{t.title}</div><div style={{ fontSize:12, color:'var(--text-dim)', maxWidth:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.description}</div></td>
+                    <td><span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontFamily:'var(--mono)', letterSpacing:'0.08em', textTransform:'uppercase', background:typeBg[t.task_type], color:typeColor[t.task_type] }}>{t.task_type}</span></td>
+                    <td><span style={{ fontFamily:'var(--mono)', fontWeight:700, color:'var(--teal)' }}>+{t.points_reward} CP</span></td>
+                    <td>{t.requires_proof ? '✅ Yes' : '—'}</td>
+                    <td style={{ fontSize:12, color:'var(--text-dim)', fontFamily:'var(--mono)' }}>{t.expires_at ? new Date(t.expires_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '—'}</td>
+                    <td><span className={`badge ${t.is_active?'badge-approved':'badge-dim'}`}>{t.is_active?'Active':'Inactive'}</span></td>
+                    <td>
+                      <div style={{ display:'flex', gap:6 }}>
+                        <button className="btn btn-xs btn-secondary" onClick={() => openEdit(t)}>Edit</button>
+                        <button className="btn btn-xs" style={{ background:t.is_active?'var(--red-pale)':'var(--green-pale)', color:t.is_active?'var(--red)':'var(--green)', border:`1px solid ${t.is_active?'rgba(220,38,38,0.2)':'rgba(22,163,74,0.2)'}` }} onClick={() => toggleActive(t)}>{t.is_active?'Pause':'Activate'}</button>
+                        <button className="btn btn-xs btn-danger" onClick={() => deleteTask(t)}>Del</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {modal && (
+        <div className="modal-overlay" onClick={e => { if(e.target===e.currentTarget) setModal(false); }}>
+          <div className="modal">
+            <div className="modal-header"><div className="modal-title">{editing?'Edit Task':'Create Task'}</div><button className="modal-close" onClick={()=>setModal(false)}>×</button></div>
+            <div className="modal-body">
+              <div className="form-group"><label>Title *</label><input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Share Croissance post on X" /></div>
+              <div className="form-group"><label>Description *</label><textarea value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} rows={3} /></div>
+              <div className="input-row">
+                <div className="form-group"><label>Type</label><select value={form.task_type} onChange={e=>setForm(f=>({...f,task_type:e.target.value}))}><option value="daily">Daily</option><option value="timed">Timed</option><option value="ongoing">Ongoing</option></select></div>
+                <div className="form-group"><label>Points</label><input type="number" value={form.points_reward} onChange={e=>setForm(f=>({...f,points_reward:e.target.value}))} /></div>
+              </div>
+              <div className="input-row">
+                <div className="form-group"><label>Expires At</label><input type="datetime-local" value={form.expires_at} onChange={e=>setForm(f=>({...f,expires_at:e.target.value}))} /></div>
+                <div className="form-group"><label>Max Submissions</label><input type="number" value={form.max_submissions} onChange={e=>setForm(f=>({...f,max_submissions:e.target.value}))} placeholder="Leave blank for unlimited" /></div>
+              </div>
+              <div className="form-group"><label>Proof Instructions</label><input value={form.proof_note} onChange={e=>setForm(f=>({...f,proof_note:e.target.value}))} placeholder="e.g. Screenshot showing completion" /></div>
+              <div className="form-group"><label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', textTransform:'none', letterSpacing:0, fontSize:13 }}><input type="checkbox" checked={form.requires_proof} onChange={e=>setForm(f=>({...f,requires_proof:e.target.checked}))} style={{ width:'auto', margin:0 }} />Require image proof</label></div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={()=>setModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Saving...':editing?'Save Changes':'Create Task'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/*import React, { useState, useEffect } from 'react';
 import supabase from '../supabase';
 import { useToast } from '../hooks/useAdmin';
 
@@ -195,8 +314,9 @@ export default function Tasks() {
           </div>
         </div>
       )}
+        */
 
-      {/* ── CREATE / EDIT MODAL ── */}
+      /* ── CREATE / EDIT MODAL ── 
       {modal && (
         <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setModal(false); }}>
           <div className="modal">
@@ -259,4 +379,4 @@ export default function Tasks() {
       )}
     </div>
   );
-}
+}*/
