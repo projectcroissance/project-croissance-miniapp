@@ -63,6 +63,7 @@ p  { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
   height: 100vh;
   max-width: 480px;
   margin: 0 auto;
+  overflow-y: auto;
 }
 
 .page {
