@@ -4,6 +4,7 @@ const supabase = require('../supabase');
 const COMMUNITY_LINK = process.env.COMMUNITY_LINK || 'https://t.me/projectcroissancechat';
 const MINIAPP_URL    = process.env.MINIAPP_URL    || 'https://project-croissance-tg-miniapp.vercel.app/';
 const BOT_USERNAME   = process.env.BOT_USERNAME   || 'Croissanceguildbot';
+const { escapeHtml, send } = require("../utils/telegram");
 
 // ─────────────────────────────────────────────
 // /start — entry point, opens mini app
@@ -253,11 +254,14 @@ async function handleLeaderboard(bot, msg) {
 
     let text = `🏆 *Monthly Leaderboard*\n\n`;
     board.forEach((m, i) => {
-      const name     = m.first_name || 'Member';
-      const handle   = m.telegram_username ? ` @${m.telegram_username}` : '';
+      const name = escapeHtml(m.first_name || "Member");
+      const handle =
+        m.telegram_username
+          ? ` @${escapeHtml(m.telegram_username)}`
+          : "";
       const legacy   = m.is_legacy ? ' ⭐' : '';
       const medal    = medals[i] || `${i+1}.`;
-      text += `${medal} *${name}*${handle}${legacy} — \`${m.monthly_points} CP\`\n`;
+      text += `${medal} <b>${name}</b>${handle}${legacy} — <code>${m.monthly_points} CP</code>\n`;
     });
 
     // Find caller's position
@@ -268,15 +272,21 @@ async function handleLeaderboard(bot, msg) {
       .single();
 
     if (myRank) {
-      text += `\n_Your position: #${myRank.rank} with ${myRank.monthly_points} CP_`;
+      text += `\n<i>Your position: #${myRank.rank} with ${myRank.monthly_points} CP</i>`;
     }
 
-    text += `\n\n_Updates in real time. Resets 1st of every month._`;
+    text += `\n\n<i>Updates in real time. Resets on the 1st of every month.</i>`;
 
-    await bot.sendMessage(chatId, text, {
-      parse_mode: 'Markdown',
+    await send(bot, chatId, text, {
       reply_markup: {
-        inline_keyboard: [[{ text: '🏆 Full Leaderboard', web_app: { url: MINIAPP_URL } }]],
+        inline_keyboard: [[
+          {
+            text: "🏆 Full Leaderboard",
+            web_app: {
+              url: MINIAPP_URL,
+            },
+          },
+        ]],
       },
     });
   } catch (err) {

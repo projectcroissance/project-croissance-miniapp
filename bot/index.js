@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+/*require('dotenv').config({ path: '../.env' });
 const express    = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 
@@ -29,7 +29,7 @@ let bot;
 
 if (NODE_ENV === 'production') {
   // Production: webhook mode
-  bot = new TelegramBot(BOT_TOKEN, { webHook: { port: PORT } });
+  bot = new TelegramBot(BOT_TOKEN);
   console.log('🤖 Bot running in WEBHOOK mode');
 } else {
   // Development: polling mode (simpler, no tunnel needed for testing)
@@ -55,9 +55,13 @@ app.get('/', (req, res) => {
 
 // Webhook endpoint (production only)
 if (NODE_ENV === 'production') {
-  const WEBHOOK_URL = process.env.MINIAPP_URL?.replace('miniapp', 'bot') || '';
+  const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
-  bot.setWebHook(`${WEBHOOK_URL}/webhook/${BOT_TOKEN}`);
+  if (!WEBHOOK_URL) {
+    throw new Error("WEBHOOK_URL is not set");
+  }
+
+  await bot.setWebHook(`${WEBHOOK_URL}/webhook/${BOT_TOKEN}`);
 
   app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
     bot.processUpdate(req.body);
@@ -119,6 +123,174 @@ bot.on('error', (err) => {
 
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled rejection:', reason);
+});
+
+console.log(`
+╔════════════════════════════════════════╗
+║   PROJECT CROISSANCE GUILD BOT         ║
+║   Status: Running ✅                   ║
+║   Community: t.me/projectcroissancechat║
+╚════════════════════════════════════════╝
+`); */
+
+require("dotenv").config();
+
+const express = require("express");
+const TelegramBot = require("node-telegram-bot-api");
+
+const {
+  handleStart,
+  handlePoints,
+  handleReferral,
+  handleTasks,
+  handleLeaderboard,
+  handleHelp,
+} = require("./handlers/commands");
+
+const { handleCallback } = require("./handlers/callbacks");
+const { handleNewMember } = require("./handlers/group");
+const { startCronJobs } = require("./cron");
+
+// ─────────────────────────────────────────────
+// Environment
+// ─────────────────────────────────────────────
+
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+if (!BOT_TOKEN) {
+  console.error("❌ BOT_TOKEN missing");
+  process.exit(1);
+}
+
+const isProduction = NODE_ENV === "production";
+
+// ─────────────────────────────────────────────
+// Express
+// ─────────────────────────────────────────────
+
+const app = express();
+
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    mode: NODE_ENV,
+    uptime: process.uptime(),
+  });
+});
+
+// ─────────────────────────────────────────────
+// Telegram Bot
+// ─────────────────────────────────────────────
+
+const bot = new TelegramBot(BOT_TOKEN, {
+  polling: !isProduction,
+});
+
+console.log(
+  `🤖 Bot running in ${isProduction ? "WEBHOOK" : "POLLING"} mode`
+);
+
+// ─────────────────────────────────────────────
+// Webhook (Production only)
+// ─────────────────────────────────────────────
+
+if (isProduction) {
+  app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+  });
+}
+
+// ─────────────────────────────────────────────
+// Commands
+// ─────────────────────────────────────────────
+
+bot.onText(/\/start(.*)/, (msg) => handleStart(bot, msg));
+bot.onText(/\/points/, (msg) => handlePoints(bot, msg));
+bot.onText(/\/referral/, (msg) => handleReferral(bot, msg));
+bot.onText(/\/tasks/, (msg) => handleTasks(bot, msg));
+bot.onText(/\/leaderboard/, (msg) => handleLeaderboard(bot, msg));
+bot.onText(/\/help/, (msg) => handleHelp(bot, msg));
+
+// ─────────────────────────────────────────────
+// Callbacks
+// ─────────────────────────────────────────────
+
+bot.on("callback_query", (query) => handleCallback(bot, query));
+
+// ─────────────────────────────────────────────
+// Group Events
+// ─────────────────────────────────────────────
+
+bot.on("new_chat_members", (msg) => handleNewMember(bot, msg));
+
+// ─────────────────────────────────────────────
+// Cron Jobs
+// ─────────────────────────────────────────────
+
+startCronJobs(bot);
+
+// ─────────────────────────────────────────────
+// Telegram Commands
+// ─────────────────────────────────────────────
+
+bot.setMyCommands([
+  { command: "start", description: "🚀 Open the Guild App" },
+  { command: "points", description: "📊 Check your CP balance" },
+  { command: "referral", description: "🔗 Get your referral link" },
+  { command: "tasks", description: "📋 View active tasks" },
+  { command: "leaderboard", description: "🏆 Top 10 this month" },
+  { command: "help", description: "❓ How to earn CP" },
+]);
+
+// ─────────────────────────────────────────────
+// Start Server
+// ─────────────────────────────────────────────
+
+app.listen(PORT, async () => {
+  console.log(`🌐 Express server running on port ${PORT}`);
+
+  if (isProduction) {
+    const WEBHOOK_URL = process.env.WEBHOOK_URL;
+
+    if (!WEBHOOK_URL) {
+      console.error("❌ WEBHOOK_URL missing");
+      process.exit(1);
+    }
+
+    try {
+      await bot.deleteWebHook();
+
+      await bot.setWebHook(
+        `${WEBHOOK_URL}/webhook/${BOT_TOKEN}`
+      );
+
+      console.log("✅ Webhook registered");
+    } catch (err) {
+      console.error("❌ Failed to register webhook");
+      console.error(err.message);
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// Errors
+// ─────────────────────────────────────────────
+
+bot.on("polling_error", (err) => {
+  console.error(err.message);
+});
+
+bot.on("error", (err) => {
+  console.error(err.message);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error(err);
 });
 
 console.log(`
