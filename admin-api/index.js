@@ -47,8 +47,8 @@ app.use(helmet());
 const ALLOWED_ORIGINS = [
   process.env.ADMIN_FRONTEND_URL || 'http://localhost:3002',
   'http://localhost:3000',
-  'https://project-croissance-miniapp-admin.vercel.app/',
   'http://localhost:5173', // Vite default
+  'https://project-croissance-miniapp-admin.vercel.app',
 ].filter(Boolean);
 
 app.use(cors({
